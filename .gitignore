@@ -1,0 +1,91 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+
+# Logs
+*.log
+logs/
+upload_log.txt
+scraping.log
+knowledge_graph.log
+arxiv_scraper.log
+nasa_scraper.log
+scraper_test.log
+
+# Data and Cache
+data/
+processed_data/
+.pytest_cache/
+.coverage
+htmlcov/
+*.pkl
+upload_progress.pkl
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Output directories
+output/
+outputs/
+visualizations/
+reports/
+
+# Backup files
+backups/
+
+# Local configuration
+.env
+.env.*
+!.env.example
+
+# Documentation build
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# Test data
+test_data/
+
+# Kubernetes secrets
+kubernetes/secrets/
+
+# Docker
+.docker/
+*.dockerignore

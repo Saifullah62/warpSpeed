@@ -1,0 +1,33 @@
+# Development environment configuration
+
+extends: base.yaml
+
+app:
+  debug: true
+
+logging:
+  level: "DEBUG"
+  elk:
+    enabled: false
+
+monitoring:
+  dashboard:
+    update_interval: 1000
+  metrics:
+    collection_interval: 500
+
+data:
+  retention:
+    raw_data: "unlimited"
+    processed: "unlimited"
+    logs: "7 days"
+
+ai:
+  models:
+    auto_update: true
+  reasoning:
+    cache_size: 5000
+
+security:
+  api:
+    rate_limit: 1000

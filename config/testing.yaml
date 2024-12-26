@@ -1,0 +1,38 @@
+# Testing environment configuration
+
+extends: base.yaml
+
+app:
+  debug: true
+
+logging:
+  level: "DEBUG"
+  handlers:
+    file:
+      enabled: false
+    console:
+      enabled: true
+    elk:
+      enabled: false
+
+monitoring:
+  dashboard:
+    update_interval: 100
+  metrics:
+    collection_interval: 100
+
+data:
+  retention:
+    raw_data: "1 day"
+    processed: "1 day"
+    logs: "1 day"
+
+ai:
+  models:
+    auto_update: true
+  reasoning:
+    cache_size: 1000
+
+security:
+  api:
+    rate_limit: 10000

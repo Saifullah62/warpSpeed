@@ -1,0 +1,35 @@
+# Production environment configuration
+
+extends: base.yaml
+
+app:
+  debug: false
+
+logging:
+  level: "WARNING"
+  elk:
+    enabled: true
+    host: "elk.production.internal"
+    port: 9200
+
+monitoring:
+  dashboard:
+    update_interval: 5000
+  metrics:
+    collection_interval: 1000
+
+data:
+  retention:
+    raw_data: "90 days"
+    processed: "180 days"
+    logs: "30 days"
+
+ai:
+  models:
+    auto_update: false
+  reasoning:
+    cache_size: 10000
+
+security:
+  api:
+    rate_limit: 100

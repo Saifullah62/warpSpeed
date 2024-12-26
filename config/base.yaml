@@ -1,0 +1,60 @@
+# Base configuration for Star Trek Technology Project
+
+app:
+  name: "Star Trek Technology"
+  version: "1.0.0"
+  debug: false
+
+logging:
+  format: "json"
+  level: "INFO"
+  handlers:
+    file:
+      enabled: true
+      path: "logs/app.log"
+      rotation: "1 day"
+    console:
+      enabled: true
+    elk:
+      enabled: false
+      host: "localhost"
+      port: 9200
+
+monitoring:
+  dashboard:
+    update_interval: 5000
+    retention_period: 86400
+  metrics:
+    collection_interval: 1000
+    batch_size: 100
+  predictive_analytics:
+    model_update_interval: 3600
+    prediction_horizon: 3600
+
+data:
+  storage:
+    raw_data: "data/"
+    processed: "processed_data/"
+    models: "models/"
+  retention:
+    raw_data: "90 days"
+    processed: "180 days"
+    logs: "30 days"
+
+ai:
+  models:
+    path: "models/"
+    version_control: true
+    auto_update: false
+  reasoning:
+    max_depth: 5
+    timeout: 30
+    cache_size: 1000
+
+security:
+  encryption:
+    algorithm: "AES-256"
+    key_rotation: "30 days"
+  api:
+    rate_limit: 100
+    timeout: 30

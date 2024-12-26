@@ -1,0 +1,67 @@
+name: Pipeline Metrics
+
+on:
+  workflow_run:
+    workflows: ['CI/CD Pipeline', 'Staging Deployment', 'Production Deployment']
+    types:
+      - completed
+
+jobs:
+  collect-metrics:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Download workflow artifacts
+      uses: actions/download-artifact@v2
+      with:
+        path: artifacts
+        
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.11"
+        
+    - name: Install dependencies
+      run: |
+        pip install prometheus_client requests
+        
+    - name: Collect metrics
+      run: |
+        python scripts/collect_pipeline_metrics.py
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PROMETHEUS_PUSHGATEWAY: ${{ secrets.PROMETHEUS_PUSHGATEWAY }}
+        
+    - name: Upload metrics
+      uses: actions/upload-artifact@v2
+      with:
+        name: pipeline-metrics
+        path: metrics/
+        
+    - name: Alert on slow pipelines
+      if: ${{ env.PIPELINE_DURATION > 1800 }}
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "text": "Pipeline taking longer than expected",
+            "attachments": [{
+              "color": "warning",
+              "fields": [
+                {
+                  "title": "Workflow",
+                  "value": "${{ github.workflow }}",
+                  "short": true
+                },
+                {
+                  "title": "Duration",
+                  "value": "${{ env.PIPELINE_DURATION }}s",
+                  "short": true
+                }
+              ]
+            }]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

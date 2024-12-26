@@ -1,0 +1,74 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Run every Sunday
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-tools safety
+
+      - name: Check for updates
+        id: check
+        run: |
+          pip list --outdated --format=json > outdated.json
+          
+      - name: Update requirements
+        run: |
+          pip-compile --upgrade requirements.in
+          pip-compile --upgrade dev-requirements.in
+
+      - name: Run safety check
+        run: |
+          safety check
+
+      - name: Run tests
+        run: |
+          pip install -r requirements.txt
+          pytest
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update dependencies'
+          title: 'chore: update dependencies'
+          body: |
+            Automated dependency updates
+            
+            - Updates dependencies to their latest compatible versions
+            - Runs safety checks to ensure no known vulnerabilities
+            - Verifies all tests pass with updated dependencies
+            
+            Please review and merge if everything looks good.
+          branch: dependency-updates
+          base: develop
+          labels: dependencies
+          assignees: ${{ github.actor }}
+          reviewers: ${{ github.actor }}
+
+      - name: Check for vulnerabilities
+        if: failure()
+        uses: actions/github-script@v4
+        with:
+          script: |
+            github.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Security: Dependency Update Failed',
+              body: 'Dependency update workflow failed. Please check the logs for security vulnerabilities.',
+              labels: ['security', 'dependencies']
+            })

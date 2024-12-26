@@ -1,0 +1,6 @@
+[pydocstyle]
+inherit = false
+ignore = D203, D213, D107
+match = (?!test_).*\.py
+match_dir = [^\.].*
+convention = google

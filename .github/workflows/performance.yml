@@ -1,0 +1,71 @@
+name: Performance Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 0 * * 1'  # Run every Monday
+
+jobs:
+  performance:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install locust pytest-benchmark memory_profiler psutil
+
+    - name: Run Load Tests
+      run: |
+        locust --headless -f tests/performance/locustfile.py --users 100 --spawn-rate 10 --run-time 5m
+
+    - name: Run Benchmark Tests
+      run: |
+        pytest tests/performance/benchmark_test.py --benchmark-only --benchmark-json output.json
+
+    - name: Memory Profiling
+      run: |
+        python -m memory_profiler tests/performance/memory_test.py > memory_profile.txt
+
+    - name: CPU Profiling
+      run: |
+        python -m cProfile -o profile.stats tests/performance/cpu_test.py
+        python -c "import pstats; p = pstats.Stats('profile.stats'); p.sort_stats('cumulative').print_stats(50)" > cpu_profile.txt
+
+    - name: Analyze Results
+      run: |
+        python scripts/analyze_performance.py
+
+    - name: Upload Performance Results
+      uses: actions/upload-artifact@v2
+      with:
+        name: performance-results
+        path: |
+          output.json
+          memory_profile.txt
+          cpu_profile.txt
+          performance_report.html
+
+    - name: Performance Report
+      if: always()
+      uses: actions/github-script@v4
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('performance_report.html', 'utf8');
+          github.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'Performance Test Results',
+            body: report
+          });
