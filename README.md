@@ -190,4 +190,3 @@ If you use this dataset in your research, please cite:
   publisher = {Hugging Face},
   url = {https://huggingface.co/datasets/Saifullah/StarTrekTechnology}
 }
-```
