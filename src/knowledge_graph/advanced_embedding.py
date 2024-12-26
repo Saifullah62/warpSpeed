@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Union, Callable
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,10 +15,6 @@ from sklearn.metrics import (
     f1_score, 
     classification_report
 )
-
-# Meta-learning and few-shot learning libraries
-import higher
-import learn2learn as l2l
 
 # Local imports
 from .contextual_representation import ContextualRepresentationLearner
@@ -37,19 +33,16 @@ class MetaLearningEmbeddingAdapter:
     
     def __init__(
         self, 
-        base_model: str = 'allenai/scibert_scivocab_uncased'
+        model: nn.Module
     ):
         """
         Initialize meta-learning embedding adapter.
         
         Args:
-            base_model: Base embedding model to adapt
+            model: Base neural network model
         """
-        self.logger = get_logger(__name__)
-        
-        # Base embedding model
-        self.base_model = AutoModel.from_pretrained(base_model)
-        self.tokenizer = AutoTokenizer.from_pretrained(base_model)
+        self.model = model
+        self.optimizer = optim.Adam(self.model.parameters())
         
         # Meta-learning adaptation layer
         self.meta_adapter = nn.Sequential(
@@ -58,6 +51,30 @@ class MetaLearningEmbeddingAdapter:
             nn.Dropout(0.3),
             nn.Linear(1024, 768)
         )
+    
+    def adapt(
+        self, 
+        support_data: torch.Tensor, 
+        support_labels: torch.Tensor, 
+        num_adaptation_steps: int = 5
+    ):
+        """Adapt the model using support data."""
+        self.model.train()
+        for _ in range(num_adaptation_steps):
+            self.optimizer.zero_grad()
+            output = self.model(support_data)
+            loss = F.cross_entropy(output, support_labels)
+            loss.backward()
+            self.optimizer.step()
+            
+    def evaluate(
+        self, 
+        query_data: torch.Tensor
+    ):
+        """Evaluate on query data."""
+        self.model.eval()
+        with torch.no_grad():
+            return self.model(query_data)
     
     def few_shot_adaptation(
         self, 
@@ -81,21 +98,15 @@ class MetaLearningEmbeddingAdapter:
         query_embeddings = self._generate_embeddings(query_set)
         
         # Meta-learning adaptation
-        with higher.innerloop_ctx(self.meta_adapter, self.optimizer) as (fnet, diffopt):
-            # Compute support set loss
-            support_loss = self._compute_support_loss(support_embeddings)
-            
-            # Adapt meta-model
-            diffopt.step(support_loss)
-            
-            # Evaluate on query set
-            query_loss = self._compute_query_loss(query_embeddings)
+        self.adapt(support_embeddings, torch.tensor([entity.type.value for entity in support_set]))
+        
+        # Evaluate on query set
+        query_loss = self._compute_query_loss(query_embeddings)
         
         # Compute adaptation metrics
         metrics = {
-            'support_loss': support_loss.item(),
             'query_loss': query_loss.item(),
-            'adaptation_score': 1 - (query_loss / support_loss)
+            'adaptation_score': 1 - query_loss
         }
         
         return metrics
@@ -703,7 +714,7 @@ class MultiModalEmbeddingFinetuner:
         self.triplet_loss = nn.TripletMarginLoss()
         
         # Meta-learning adapter
-        self.meta_adapter = MetaLearningEmbeddingAdapter()
+        self.meta_adapter = MetaLearningEmbeddingAdapter(self.fusion_layer)
         
         # Initialize performance metrics tracker
         self.performance_tracker = PerformanceMetricsTracker(

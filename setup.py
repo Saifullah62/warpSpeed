@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="warp-speed-dataset",
+    name="warpspeed",
     version="1.0.0",
     packages=find_packages(),
     install_requires=[
@@ -16,12 +16,12 @@ setup(
         "networkx>=2.6.0",
         "nltk>=3.6.0",
     ],
-    author="GotThatData",
-    author_email="contact@gotthatdata.com",
-    description="A comprehensive dataset for warp drive research",
+    author="Saifullah62",
+    author_email="saifullah62@github.com",
+    description="Advanced Star Trek technology analysis and simulation platform",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/GotThatData/warp-speed-dataset",
+    url="https://github.com/Saifullah62/warpSpeed",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -29,6 +29,7 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Physics",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.8",
 )

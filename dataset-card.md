@@ -8,58 +8,99 @@ tags:
 - spacetime
 - warp-drive
 - scientific-data
+- star-trek
+- theoretical-physics
+- advanced-propulsion
 datasets:
-- GotThatData/warp-speed
+- Saifullah62/warpspeed
 ---
 
-# Dataset Card for Warp Drive Research Dataset
+# Dataset Card for WarpSpeed Research Dataset
 
 ## Dataset Description
 
-- **Homepage:** [GitHub Repository](https://github.com/GotThatData/warp-speed)
-- **Repository:** https://huggingface.co/datasets/GotThatData/warp-speed
-- **Paper:** [Link to paper if available]
-- **Point of Contact:** [GitHub Issues](https://github.com/GotThatData/warp-speed/issues)
+- **Homepage:** [GitHub Repository](https://github.com/Saifullah62/warpSpeed)
+- **Repository:** https://huggingface.co/datasets/Saifullah62/warpspeed
+- **Documentation:** [WarpSpeed Docs](https://docs.warpspeed.ai)
+- **Point of Contact:** [GitHub Issues](https://github.com/Saifullah62/warpSpeed/issues)
 
 ### Dataset Summary
 
-The Warp Drive Research Dataset is a comprehensive collection of scientific research papers, experimental data, and theoretical materials focused on physics concepts that could enable faster-than-light travel. It aggregates information from leading physics institutions and repositories worldwide, covering quantum physics, spacetime manipulation, exotic matter, and advanced propulsion concepts.
+The WarpSpeed Research Dataset is a comprehensive collection of scientific research papers, experimental data, and theoretical materials focused on advanced propulsion concepts and physics principles inspired by Star Trek technologies. This dataset combines real-world physics research with theoretical frameworks to explore the possibilities of faster-than-light travel and advanced energy systems.
 
-### Supported Tasks and Leaderboards
+### Key Features
 
-- **Tasks:**
+- **Comprehensive Physics Coverage**
+  - Quantum mechanics and field theories
+  - Spacetime manipulation theories
+  - Exotic matter research
+  - Advanced propulsion systems
+  - Energy generation concepts
+
+- **Multi-Modal Data Types**
+  - Scientific research papers
+  - Experimental datasets
+  - Theoretical models
+  - Simulation results
+  - Technical specifications
+  - Visual diagrams and schematics
+
+- **Quality Assurance**
+  - Peer-reviewed content
+  - Rigorous validation protocols
+  - Regular updates and versioning
+  - Comprehensive documentation
+
+### Supported Tasks
+
+- **Primary Tasks:**
   - Scientific Literature Analysis
-  - Physics Research
+  - Physics Research and Validation
   - Theoretical Model Development
   - Experimental Data Analysis
   - Cross-disciplinary Physics Research
+  - Technology Feasibility Assessment
+
+- **Secondary Applications:**
+  - Educational Resource Development
+  - Research Trend Analysis
+  - Technology Roadmap Planning
+  - Scientific Visualization
 
 ### Languages
 
-The dataset primarily contains English-language materials, with some papers and documentation in other scientific languages.
+The dataset primarily contains English-language materials, with supplementary content in other scientific languages. All non-English content includes English translations or summaries.
 
 ## Dataset Structure
 
 ### Data Instances
 
-Each research item in the dataset typically contains:
+Each research item in the dataset contains:
 
 ```python
 {
     "title": str,                    # Title of the research paper/data
     "authors": List[str],            # List of authors
     "publication_date": str,         # Publication date
-    "doi": str,                      # Digital Object Identifier
     "abstract": str,                 # Research abstract
     "keywords": List[str],           # Research keywords
-    "methodology": str,              # Research methodology
-    "results": str,                  # Research results
-    "data_tables": List[Dict],       # Numerical data
-    "figures": List[Dict],           # Research figures
-    "references": List[str],         # Citations and references
-    "institution": str,              # Research institution
-    "funding": List[str],            # Funding sources
-    "related_materials": Dict        # Links to code/data
+    "physics_domain": str,           # Primary physics domain
+    "tech_category": str,            # Related Star Trek technology
+    "data_type": str,               # Type of research data
+    "content": {
+        "text": str,                # Full text content
+        "equations": List[str],     # Mathematical equations
+        "diagrams": List[str],      # Technical diagrams
+        "datasets": List[Dict],     # Associated experimental data
+        "simulations": List[Dict]   # Simulation results
+    },
+    "metadata": {
+        "quality_score": float,     # Content quality metric
+        "peer_reviewed": bool,      # Peer review status
+        "citations": int,           # Citation count
+        "version": str,             # Dataset version
+        "last_updated": str         # Last update timestamp
+    }
 }
 ```
 
@@ -68,17 +109,13 @@ Each research item in the dataset typically contains:
 - `title`: Title of the research work
 - `authors`: List of contributing researchers
 - `publication_date`: Date of publication
-- `doi`: Digital Object Identifier
 - `abstract`: Research summary
 - `keywords`: Topic keywords
-- `methodology`: Research methods
-- `results`: Research findings
-- `data_tables`: Numerical data
-- `figures`: Visual data
-- `references`: Citations
-- `institution`: Research organization
-- `funding`: Financial support
-- `related_materials`: Additional resources
+- `physics_domain`: Primary physics domain
+- `tech_category`: Related Star Trek technology
+- `data_type`: Type of research data
+- `content`: Research content, including text, equations, diagrams, datasets, and simulations
+- `metadata`: Quality metrics, peer review status, citations, version, and last update timestamp
 
 ### Data Splits
 
@@ -174,7 +211,7 @@ The dataset contains only public research data and does not include personal or 
 
 ### Dataset Curators
 
-The dataset is maintained by GotThatData and the physics research community.
+The dataset is maintained by Saifullah62 and the physics research community.
 
 ### Licensing Information
 
@@ -183,12 +220,12 @@ This dataset is released under the Creative Commons Attribution 4.0 Internationa
 ### Citation Information
 
 ```bibtex
-@dataset{warp_drive_dataset,
-  title={Warp Drive Research Dataset},
-  author={GotThatData},
+@dataset{warpspeed_dataset,
+  title={WarpSpeed Research Dataset},
+  author={Saifullah62},
   year={2024},
   publisher={Hugging Face},
-  url={https://huggingface.co/datasets/GotThatData/warp-speed}
+  url={https://huggingface.co/datasets/Saifullah62/warpspeed}
 }
 ```
 

@@ -1,0 +1,57 @@
+{
+    "entity_extraction": {
+        "models": {
+            "spacy": {
+                "model_name": "en_core_web_trf",
+                "confidence_threshold": 0.7
+            },
+            "huggingface": {
+                "model_name": "allenai/scibert_scivocab_uncased",
+                "confidence_threshold": 0.6
+            }
+        },
+        "multi_modal": {
+            "enabled": true,
+            "strategies": [
+                "textual",
+                "contextual",
+                "semantic"
+            ]
+        }
+    },
+    "relationship_mapping": {
+        "confidence_scoring": {
+            "base_weight": 0.5,
+            "semantic_proximity_weight": 0.3,
+            "type_compatibility_weight": 0.2
+        },
+        "max_relationship_distance": 3,
+        "pruning_threshold": 0.4
+    },
+    "graph_construction": {
+        "versioning": {
+            "max_versions": 10,
+            "auto_prune": true
+        },
+        "visualization": {
+            "enabled": true,
+            "output_format": [
+                "networkx",
+                "graphviz",
+                "json"
+            ]
+        }
+    },
+    "logging": {
+        "level": "INFO",
+        "console_output": true,
+        "file_output": true,
+        "log_dir": "logs/knowledge_graph"
+    },
+    "performance": {
+        "max_concurrent_tasks": 4,
+        "memory_limit_mb": 2048,
+        "cache_enabled": true,
+        "cache_expiry_minutes": 60
+    }
+}

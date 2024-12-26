@@ -1,6 +1,8 @@
 import asyncio
 import pytest
+import torch
 import numpy as np
+from unittest.mock import Mock, patch
 
 # Import domain evaluation components
 from src.knowledge_graph.domain_evaluation import (
@@ -8,7 +10,7 @@ from src.knowledge_graph.domain_evaluation import (
     DomainEvaluator,
     DomainEvaluationMetrics
 )
-from src.knowledge_graph.schema import Entity, EntityType, Relationship, RelationshipType
+from src.knowledge_graph.schema import Entity, EntityType, Relationship, RelationType
 
 @pytest.fixture
 def domain_specific_tokenizer():
@@ -89,12 +91,12 @@ class TestDomainEvaluator:
             Relationship(
                 source=entities[0], 
                 target=entities[1], 
-                type=RelationshipType.ENABLES
+                type=RelationType.ENABLES
             ),
             Relationship(
                 source=entities[1], 
                 target=entities[2], 
-                type=RelationshipType.APPLIED_IN
+                type=RelationType.APPLIED_IN
             )
         ]
         
@@ -192,7 +194,7 @@ class TestDomainEvaluationPerformance:
             Relationship(
                 source=entities[i], 
                 target=entities[(i+1) % num_entities], 
-                type=RelationshipType.RELATES_TO
+                type=RelationType.RELATES_TO
             ) for i in range(num_entities)
         ]
         

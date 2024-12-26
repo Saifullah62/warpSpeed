@@ -8,7 +8,7 @@ import torch
 from transformers import AutoModel, AutoTokenizer
 
 # Local imports
-from .schema import Entity, EntityType, Relationship, RelationshipType
+from .schema import Entity, EntityType, Relationship, RelationType
 from .config import CONFIG
 from .logging_config import get_logger, log_performance
 
@@ -126,7 +126,7 @@ class RelationshipInferenceModel:
         source_entity: Entity, 
         target_entity: Entity, 
         context: Optional[str] = None
-    ) -> RelationshipType:
+    ) -> RelationType:
         """
         Infer most likely relationship type between two entities.
         
@@ -146,11 +146,11 @@ class RelationshipInferenceModel:
         # Placeholder for ML-based inference
         # In a full implementation, this would use a trained classifier
         if source_entity.type == EntityType.CONCEPT and target_entity.type == EntityType.TECHNOLOGY:
-            return RelationshipType.ENABLES
+            return RelationType.ENABLES
         elif source_entity.type == EntityType.TECHNOLOGY and target_entity.type == EntityType.EXPERIMENT:
-            return RelationshipType.APPLIED_IN
+            return RelationType.APPLIED_IN
         else:
-            return RelationshipType.RELATES_TO
+            return RelationType.RELATES_TO
 
 class DynamicSchemaManager:
     """

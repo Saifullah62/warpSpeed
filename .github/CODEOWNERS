@@ -1,0 +1,22 @@
+# Default owners for everything in the repo
+* @Saifullah62
+
+# Documentation owners
+/docs/ @Saifullah62
+*.md @Saifullah62
+*.rst @Saifullah62
+
+# GitHub Actions workflow owners
+/.github/workflows/ @Saifullah62
+
+# Core application code owners
+/src/ @Saifullah62
+/tests/ @Saifullah62
+
+# Configuration files owners
+*.yml @Saifullah62
+*.yaml @Saifullah62
+*.json @Saifullah62
+
+# Security-related files
+/security/ @Saifullah62

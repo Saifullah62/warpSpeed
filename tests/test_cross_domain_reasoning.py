@@ -8,7 +8,7 @@ from src.knowledge_graph.cross_domain_reasoning import (
     LogicalInferenceEngine,
     ReasoningStrategy
 )
-from src.knowledge_graph.schema import Entity, EntityType, Relationship, RelationshipType
+from src.knowledge_graph.schema import Entity, EntityType, Relationship, RelationType
 
 @pytest.fixture
 def logical_inference_engine():
@@ -73,7 +73,7 @@ class TestLogicalInferenceEngine:
             Relationship(
                 source=entities[0], 
                 target=entities[1], 
-                type=RelationshipType.ENABLES
+                type=RelationType.ENABLES
             )
         ]
         
@@ -150,12 +150,12 @@ class TestCrossDomainReasoningSystem:
             Relationship(
                 source=entities[0], 
                 target=entities[1], 
-                type=RelationshipType.ENABLES
+                type=RelationType.ENABLES
             ),
             Relationship(
                 source=entities[2], 
                 target=entities[3], 
-                type=RelationshipType.APPLIED_IN
+                type=RelationType.APPLIED_IN
             )
         ]
         
@@ -203,7 +203,7 @@ class TestCrossDomainReasoningSystem:
             Relationship(
                 source=entities[i], 
                 target=entities[(i+1) % num_entities], 
-                type=RelationshipType.RELATES_TO
+                type=RelationType.RELATES_TO
             ) for i in range(num_entities)
         ]
         
@@ -257,7 +257,7 @@ class TestAdvancedReasoningScenarios:
             Relationship(
                 source=physics_entities[0], 
                 target=technology_entities[0], 
-                type=RelationshipType.ENABLES
+                type=RelationType.ENABLES
             )
         ]
         

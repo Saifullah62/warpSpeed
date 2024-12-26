@@ -3,8 +3,8 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 import numpy as np
 import torch
-from transformers import AutoTokenizer, AutoModel
-import scibert
+import torch.nn as nn
+from transformers import AutoModel, AutoTokenizer
 
 # Local imports
 from .schema import Entity, EntityType, Relationship
@@ -61,7 +61,7 @@ class DomainSpecificTokenizer:
             Configured tokenizer
         """
         try:
-            # Use SciBERT for scientific domain tokenization
+            # Use standard transformer for scientific domain tokenization
             tokenizer = AutoTokenizer.from_pretrained('allenai/scibert_scivocab_uncased')
             
             # Add domain-specific tokens

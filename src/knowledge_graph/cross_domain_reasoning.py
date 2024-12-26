@@ -6,7 +6,7 @@ import torch
 from transformers import AutoModel, AutoTokenizer
 
 # Local imports
-from .schema import Entity, EntityType, Relationship, RelationshipType
+from .schema import Entity, EntityType, Relationship, RelationType
 from .config import CONFIG
 from .logging_config import get_logger, log_performance
 

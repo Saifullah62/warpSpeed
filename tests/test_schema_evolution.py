@@ -9,7 +9,7 @@ from src.knowledge_graph.schema_evolution import (
     RelationshipInferenceModel,
     SchemaEvolutionStrategy
 )
-from src.knowledge_graph.schema import Entity, EntityType, RelationshipType
+from src.knowledge_graph.schema import Entity, EntityType, Relationship, RelationType
 
 @pytest.fixture
 def relationship_inference_model():
@@ -78,8 +78,8 @@ class TestRelationshipInferenceModel:
         )
         
         # Validate relationship type
-        assert relationship_type in RelationshipType, "Invalid relationship type"
-        assert relationship_type == RelationshipType.ENABLES, "Unexpected relationship type"
+        assert relationship_type in RelationType, "Invalid relationship type"
+        assert relationship_type == RelationType.ENABLES, "Unexpected relationship type"
 
 @pytest.mark.asyncio
 class TestDynamicSchemaManager:
@@ -165,7 +165,7 @@ class TestDynamicSchemaManager:
         # Check inferred relationships
         for u, v, data in evolved_graph.edges(data=True):
             assert 'type' in data, "Missing relationship type"
-            assert data['type'] in [rt.value for rt in RelationshipType], "Invalid relationship type"
+            assert data['type'] in [rt.value for rt in RelationType], "Invalid relationship type"
     
     async def test_multi_strategy_schema_evolution(self, dynamic_schema_manager):
         """

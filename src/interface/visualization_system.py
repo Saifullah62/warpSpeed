@@ -1,24 +1,22 @@
 import asyncio
-import json
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
-from dataclasses import dataclass, field
-
-import networkx as nx
+from typing import List, Dict, Any, Optional, Tuple
 import plotly.graph_objects as go
 import plotly.express as px
+import networkx as nx
+import numpy as np
 import pandas as pd
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc, html
 from dash.dependencies import Input, Output
 
 # Local imports
-from src.knowledge_graph.knowledge_integration import (
-    KnowledgeGraphInterface, 
-    ReasoningEngine
-)
 from src.knowledge_graph.schema import Entity, EntityType, Relationship
+from src.knowledge_graph.knowledge_integration import (
+    KnowledgeGraphInterface,
+    ReasoningEngine,
+    initialize_knowledge_integration_system
+)
 
 class KnowledgeGraphVisualizer:
     """

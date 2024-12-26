@@ -4,8 +4,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import torch
 import torch.nn as nn
-from transformers import AutoModel, AutoTokenizer
-import scibert
+from transformers import AutoModel, AutoTokenizer, AutoModelForMaskedLM
 
 # Local imports
 from .schema import Entity, EntityType

@@ -1,13 +1,16 @@
 import pytest
 import json
 import torch
+from datetime import datetime
 
 from src.interface.natural_language_interface import (
     NaturalLanguageInterface,
     MultilingualQueryProcessor,
     DialogueState,
     ExplanationGenerator,
-    initialize_natural_language_interface
+    initialize_natural_language_interface,
+    SemanticUnderstandingEngine,
+    PersonalizedInteractionModel
 )
 from src.interface.visualization_system import (
     KnowledgeGraphVisualizer,
@@ -16,8 +19,6 @@ from src.interface.visualization_system import (
     initialize_visualization_system
 )
 from src.knowledge_graph.schema import Entity, EntityType
-from src.semantic_understanding.semantic_understanding_engine import SemanticUnderstandingEngine
-from src.personalized_interaction.personalized_interaction_model import PersonalizedInteractionModel
 
 class TestMultilingualQueryProcessor:
     @pytest.fixture
@@ -41,8 +42,9 @@ class TestMultilingualQueryProcessor:
         ]
         
         for query, expected_lang in test_queries:
-            detected_lang = query_processor.detect_language(query)
+            detected_lang, confidence = query_processor.detect_language(query)
             assert detected_lang == expected_lang, f"Failed to detect {expected_lang}"
+            assert confidence > 0.5, f"Low confidence {confidence} for {expected_lang}"
     
     def test_query_translation(self, query_processor):
         """
@@ -51,18 +53,30 @@ class TestMultilingualQueryProcessor:
         Validates:
         - Successful translation
         - Preserving query meaning
+        - Handling of unsupported languages
         """
         # Test translation scenarios
         test_queries = [
-            ("Bonjour, comment fonctionne l'intelligence artificielle?", 'en'),
-            ("¿Cuáles son los avances en computación cuántica?", 'en')
+            ("Hello, how are you?", 'en', 'en'),  # Same language
+            ("Bonjour, comment allez-vous?", 'fr', 'en'),  # French to English
+            ("¿Cómo estás?", 'es', 'en')  # Spanish to English
         ]
         
-        for query, target_lang in test_queries:
-            translated_query = query_processor.translate_query(query, target_lang)
+        for query, src_lang, tgt_lang in test_queries:
+            # First verify language detection
+            detected_lang, confidence = query_processor.detect_language(query)
+            assert detected_lang == src_lang, f"Failed to detect {src_lang}"
             
-            assert isinstance(translated_query, str), "Translation failed"
-            assert len(translated_query) > 0, "Empty translation"
+            # Then test translation
+            translated = query_processor.translate_query(query, tgt_lang)
+            
+            # If source and target are same, expect same text
+            if src_lang == tgt_lang:
+                assert translated == query, "Translation modified same-language text"
+            else:
+                # For actual translations, just verify we got a non-empty result
+                assert translated is not None, f"Translation failed for {src_lang} to {tgt_lang}"
+                assert len(translated.strip()) > 0, "Got empty translation"
 
 class TestDialogueState:
     @pytest.fixture
@@ -85,15 +99,33 @@ class TestDialogueState:
                 'query': "Tell me about quantum computing",
                 'response': "Quantum computing is a revolutionary technology...",
                 'entities': [
-                    Entity(name="Quantum Computing", type=EntityType.TECHNOLOGY)
+                    Entity(
+                        name="Quantum Computing",
+                        type=EntityType.TECHNOLOGY,
+                        id="QC_001",
+                        description="A type of computing that uses quantum phenomena",
+                        confidence=0.95
+                    )
                 ]
             },
             {
                 'query': "What are its applications?",
                 'response': "Quantum computing has applications in cryptography, drug discovery...",
                 'entities': [
-                    Entity(name="Cryptography", type=EntityType.CONCEPT),
-                    Entity(name="Drug Discovery", type=EntityType.CONCEPT)
+                    Entity(
+                        name="Cryptography",
+                        type=EntityType.CONCEPT,
+                        id="CRYPT_001",
+                        description="Science of securing information",
+                        confidence=0.9
+                    ),
+                    Entity(
+                        name="Drug Discovery",
+                        type=EntityType.CONCEPT,
+                        id="DRUG_001",
+                        description="Process of identifying new medicines",
+                        confidence=0.85
+                    )
                 ]
             }
         ]
@@ -274,6 +306,72 @@ class TestResearchProgressTracker:
 
 class TestSemanticUnderstandingEngine:
     @pytest.fixture
+    def knowledge_graph(self):
+        """Create a mock knowledge graph for testing."""
+        from src.knowledge_graph.knowledge_integration import KnowledgeGraphInterface
+        from unittest.mock import MagicMock, patch
+        
+        # Create mock with all required methods
+        mock_graph = MagicMock()
+        mock_graph.graph = MagicMock()
+        mock_graph.embedding_model = MagicMock()
+        mock_graph.max_entities = 100000
+        mock_graph.knowledge_sources = {}
+        mock_graph.entity_cache = {}
+        mock_graph.relationship_cache = {}
+        mock_graph.logger = MagicMock()
+        
+        # Mock required methods
+        mock_graph.add_entity = MagicMock(return_value=True)
+        mock_graph._prune_least_connected_entities = MagicMock()
+        
+        return mock_graph
+
+    @pytest.fixture
+    def embedding_model(self):
+        """Create a mock embedding model for testing."""
+        from src.knowledge_graph.advanced_embedding import MultiModalEmbeddingFinetuner
+        from unittest.mock import MagicMock, patch
+        import torch
+        
+        # Create base mock
+        mock_model = MagicMock()
+        
+        # Mock text model components
+        mock_model.text_tokenizer = MagicMock()
+        mock_model.text_model = MagicMock()
+        
+        # Mock vision model components
+        mock_model.vision_model = MagicMock()
+        
+        # Mock fusion layer
+        mock_model.fusion_layer = MagicMock()
+        
+        # Mock optimizers and loss functions
+        mock_model.optimizer = MagicMock()
+        mock_model.contrastive_loss = MagicMock()
+        mock_model.triplet_loss = MagicMock()
+        
+        # Mock meta-learning adapter
+        mock_model.meta_adapter = MagicMock()
+        
+        # Mock performance tracker
+        mock_model.performance_tracker = MagicMock()
+        
+        # Mock adaptive finetuner
+        mock_model.adaptive_finetuner = MagicMock()
+        
+        # Mock required methods
+        mock_model.generate_text_embedding = MagicMock(return_value=torch.randn(768))
+        mock_model.generate_entity_embedding = MagicMock(return_value=torch.randn(768))
+        mock_model.compute_semantic_similarity = MagicMock(return_value=0.85)
+        mock_model.generate_cross_modal_representation = MagicMock(return_value=torch.randn(768))
+        mock_model._preprocess_text = MagicMock(return_value=torch.randn(768))
+        mock_model._preprocess_image = MagicMock(return_value=torch.randn(2048))
+        
+        return mock_model
+
+    @pytest.fixture
     def semantic_understanding_engine(self, knowledge_graph, embedding_model):
         """Create a semantic understanding engine for testing."""
         return SemanticUnderstandingEngine(knowledge_graph, embedding_model)
@@ -332,16 +430,32 @@ class TestSemanticUnderstandingEngine:
             }
         ]
         
+        # Add entities to context
+        mock_dialogue_state.context_entities = [
+            Entity(
+                id="QC_001",
+                name="Quantum Computing",
+                type=EntityType.TECHNOLOGY,
+                description="A type of computing that uses quantum phenomena",
+                confidence=0.95
+            ),
+            Entity(
+                id="QA_001",
+                name="Quantum Algorithms",
+                type=EntityType.TECHNOLOGY,
+                description="Algorithms that leverage quantum mechanics",
+                confidence=0.90
+            )
+        ]
+    
         # Analyze context
         context_boost = semantic_understanding_engine._analyze_context(mock_dialogue_state)
-        
+    
         # Validate context boost
         assert isinstance(context_boost, dict), "Invalid context boost type"
         assert len(context_boost) > 0, "Empty context boost"
-        
-        # Check domain relevance scores
-        for domain, score in context_boost.items():
-            assert 0 <= score <= 1, f"Invalid score for domain {domain}"
+        assert 'technology' in context_boost, "Missing technology domain boost"
+        assert context_boost['technology'] > 0, "Invalid technology boost value"
 
 class TestPersonalizedInteractionModel:
     @pytest.fixture

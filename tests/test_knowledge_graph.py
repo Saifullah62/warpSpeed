@@ -8,7 +8,7 @@ from src.knowledge_graph.advanced_entity_extractor import AdvancedEntityExtracto
 from src.knowledge_graph.relationship_scoring import RelationshipConfidenceScorer
 from src.knowledge_graph.relationship_mapper import RelationshipMapper
 from src.knowledge_graph.builder import KnowledgeGraphBuilder
-from src.knowledge_graph.schema import Entity, EntityType, Relationship, RelationshipType
+from src.knowledge_graph.schema import Entity, EntityType, Relationship, RelationType
 
 # Sample texts for testing
 SAMPLE_TEXTS = [
@@ -74,7 +74,7 @@ class TestKnowledgeGraphComponents:
         relationship = Relationship(
             source_id=quantum_concept.id,
             target_id=warp_tech.id,
-            type=RelationshipType.RELATES_TO
+            type=RelationType.RELATES_TO
         )
         
         # Calculate confidence

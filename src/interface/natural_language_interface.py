@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -16,6 +17,7 @@ import spacy
 import langdetect
 
 # Local imports
+from src.knowledge_graph.advanced_embedding import MultiModalEmbeddingFinetuner
 from src.knowledge_graph.knowledge_integration import (
     KnowledgeGraphInterface, 
     ReasoningEngine
@@ -61,10 +63,12 @@ class DialogueState:
             response: AI's response
             extracted_entities: Entities identified in the interaction
         """
+        # Add interaction to history
         self.conversation_history.append({
             'query': query,
             'response': response,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'entities': [entity.id for entity in extracted_entities]
         })
         
         # Update context entities
@@ -73,6 +77,10 @@ class DialogueState:
         # Limit context to recent interactions
         self.conversation_history = self.conversation_history[-10:]
         self.context_entities = self.context_entities[-20:]
+        
+        # Update current topic based on latest entities
+        if extracted_entities:
+            self.current_topic = extracted_entities[0].name
 
 class MultilingualQueryProcessor:
     """
@@ -82,42 +90,95 @@ class MultilingualQueryProcessor:
         """
         Initialize multilingual query processing components.
         """
-        # Language detection
-        self.language_detector = langdetect.detect
+        # Language detection with confidence
+        self.language_detector = langdetect.DetectorFactory()
+        self.language_detector.seed = 0  # For consistent results
         
-        # Multilingual NLP models
-        self.nlp_models = {
-            'en': spacy.load('en_core_web_sm'),
-            'es': spacy.load('es_core_news_sm'),
-            'fr': spacy.load('fr_core_news_sm')
+        # Supported languages and their models
+        self.supported_languages = {'en', 'es', 'fr'}
+        
+        # Multilingual NLP models with lazy loading
+        self._nlp_models = {}
+        self.model_paths = {
+            'en': 'en_core_web_sm',
+            'es': 'es_core_news_sm',
+            'fr': 'fr_core_news_sm'
         }
         
-        # Translation pipeline
-        self.translation_pipeline = pipeline(
-            "translation", 
-            model="Helsinki-NLP/opus-mt-multiway"
-        )
+        # Translation pipelines for different language pairs
+        self.translation_models = {
+            ('fr', 'en'): 'Helsinki-NLP/opus-mt-fr-en',
+            ('en', 'fr'): 'Helsinki-NLP/opus-mt-en-fr',
+            ('es', 'en'): 'Helsinki-NLP/opus-mt-es-en',
+            ('en', 'es'): 'Helsinki-NLP/opus-mt-en-es'
+        }
+        self._translation_pipelines = {}
+        
+        # Logger for tracking issues
+        self.logger = logging.getLogger(__name__)
     
-    def detect_language(self, text: str) -> str:
+    def _get_nlp_model(self, lang: str):
+        """Get or load spaCy model for language."""
+        if lang not in self._nlp_models:
+            try:
+                self._nlp_models[lang] = spacy.load(self.model_paths[lang])
+            except OSError as e:
+                self.logger.error(f"Failed to load spaCy model for {lang}: {e}")
+                return None
+        return self._nlp_models[lang]
+    
+    def _get_translation_pipeline(self, src_lang: str, tgt_lang: str):
+        """Get or create translation pipeline for language pair."""
+        lang_pair = (src_lang, tgt_lang)
+        if lang_pair not in self._translation_pipelines:
+            if lang_pair not in self.translation_models:
+                return None
+            try:
+                self._translation_pipelines[lang_pair] = pipeline(
+                    "translation",
+                    model=self.translation_models[lang_pair],
+                    framework="pt"  # Use PyTorch instead of TensorFlow
+                )
+            except Exception as e:
+                self.logger.error(f"Failed to load translation model for {lang_pair}: {str(e)}")
+                return None
+        return self._translation_pipelines[lang_pair]
+    
+    def detect_language(self, text: str) -> Tuple[str, float]:
         """
-        Detect the language of the input text.
+        Detect the language of the input text with confidence score.
         
         Args:
             text: Input text to detect language
         
         Returns:
-            Detected language code
+            Tuple of (detected language code, confidence score)
         """
+        if not text.strip():
+            return 'en', 1.0
+            
         try:
-            return self.language_detector(text)
-        except langdetect.LangDetectException:
-            return 'en'  # Default to English
+            # Use langdetect's detect_langs() for probability scores
+            probabilities = langdetect.detect_langs(text)
+            
+            # Find highest probability supported language
+            for lang_prob in probabilities:
+                if lang_prob.lang in self.supported_languages:
+                    return lang_prob.lang, lang_prob.prob
+            
+            # If no supported language found with high confidence,
+            # default to English
+            return 'en', 1.0
+            
+        except langdetect.LangDetectException as e:
+            self.logger.warning(f"Language detection failed: {e}")
+            return 'en', 1.0
     
     def translate_query(
         self, 
         query: str, 
         target_language: str = 'en'
-    ) -> str:
+    ) -> Optional[str]:
         """
         Translate query to target language.
         
@@ -126,15 +187,55 @@ class MultilingualQueryProcessor:
             target_language: Target language code
         
         Returns:
-            Translated query
+            Translated query or None if translation fails
         """
-        translation = self.translation_pipeline(
-            query, 
-            src_lang=self.detect_language(query), 
-            tgt_lang=target_language
-        )[0]['translation_text']
-        
-        return translation
+        # Validate input
+        if not query.strip():
+            return query
+            
+        # Validate target language
+        if target_language not in self.supported_languages:
+            self.logger.error(f"Unsupported target language: {target_language}")
+            return None
+            
+        try:
+            # Detect source language with confidence
+            source_language, confidence = self.detect_language(query)
+            
+            # If already in target language, return as is
+            if source_language == target_language:
+                return query
+                
+            # Check if we have a translation model for this language pair
+            lang_pair = (source_language, target_language)
+            if lang_pair not in self.translation_models:
+                self.logger.error(
+                    f"No translation model available for {source_language} to {target_language}"
+                )
+                return None
+                
+            # Get translation pipeline
+            pipeline = self._get_translation_pipeline(source_language, target_language)
+            if not pipeline:
+                return None
+                
+            # Perform translation with error handling
+            try:
+                translation = pipeline(
+                    query,
+                    max_length=512,
+                    clean_up_tokenization_spaces=True
+                )[0]['translation_text']
+                
+                return translation.strip()
+                
+            except Exception as e:
+                self.logger.error(f"Translation failed: {str(e)}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Translation process failed: {str(e)}")
+            return None
 
 class SemanticUnderstandingEngine:
     """
@@ -180,6 +281,9 @@ class SemanticUnderstandingEngine:
                 'chemistry'
             ]
         }
+        
+        # Logger for tracking issues
+        self.logger = logging.getLogger(__name__)
     
     def extract_semantic_intent(
         self, 
@@ -196,28 +300,39 @@ class SemanticUnderstandingEngine:
         Returns:
             Semantic intent analysis
         """
-        # Contextual intent enhancement
-        contextual_boost = self._analyze_context(context) if context else {}
-        
-        # Zero-shot classification
-        classification_result = self.semantic_model(
-            query, 
-            list(self.domain_ontologies.keys()),
-            multi_label=True
-        )
-        
-        # Semantic embedding generation
-        semantic_embedding = self.embedding_model.generate_text_embedding(query)
-        
-        # Intent analysis
-        intent_analysis = {
-            'domains': classification_result['labels'],
-            'domain_scores': classification_result['scores'],
-            'semantic_embedding': semantic_embedding,
-            'contextual_boost': contextual_boost
-        }
-        
-        return intent_analysis
+        try:
+            # Contextual intent enhancement
+            contextual_boost = self._analyze_context(context) if context else {}
+            
+            # Zero-shot classification for domain detection
+            candidate_labels = list(self.domain_ontologies.keys())
+            classification_result = self.semantic_model(
+                query, 
+                candidate_labels,
+                multi_label=True
+            )
+            
+            # Generate semantic embedding
+            semantic_embedding = self.embedding_model.generate_text_embedding(query)
+            
+            # Compile intent analysis
+            intent_analysis = {
+                'domains': classification_result['labels'],
+                'domain_scores': classification_result['scores'],
+                'semantic_embedding': semantic_embedding,
+                'contextual_boost': contextual_boost
+            }
+            
+            return intent_analysis
+            
+        except Exception as e:
+            self.logger.error(f"Failed to extract semantic intent: {str(e)}")
+            return {
+                'domains': [],
+                'domain_scores': [],
+                'semantic_embedding': None,
+                'contextual_boost': {}
+            }
     
     def _analyze_context(
         self, 
@@ -232,30 +347,31 @@ class SemanticUnderstandingEngine:
         Returns:
             Contextual semantic boost
         """
-        # Analyze recent conversation history
-        context_boost = {}
-        
-        for interaction in context.conversation_history[-3:]:
-            # Generate context embedding
-            context_embedding = self.embedding_model.generate_text_embedding(
-                interaction['query']
-            )
+        if not context:
+            return {}
             
-            # Compute domain relevance
-            for domain, keywords in self.domain_ontologies.items():
-                domain_relevance = sum(
-                    self.embedding_model.compute_semantic_similarity(
-                        context_embedding, 
-                        self.embedding_model.generate_text_embedding(keyword)
-                    ) for keyword in keywords
-                ) / len(keywords)
-                
-                context_boost[domain] = max(
-                    context_boost.get(domain, 0), 
-                    domain_relevance
-                )
-        
-        return context_boost
+        try:
+            # Get recent entities from context
+            recent_entities = context.context_entities[-5:]  # Last 5 entities
+            
+            # Calculate domain boosts based on entity types
+            domain_boosts = {}
+            for entity in recent_entities:
+                if entity.type == EntityType.TECHNOLOGY:
+                    domain_boosts['technology'] = domain_boosts.get('technology', 0) + 0.2
+                elif entity.type == EntityType.CONCEPT:
+                    domain_boosts['science'] = domain_boosts.get('science', 0) + 0.2
+            
+            # Normalize boosts
+            if domain_boosts:
+                max_boost = max(domain_boosts.values())
+                domain_boosts = {k: v/max_boost for k, v in domain_boosts.items()}
+            
+            return domain_boosts
+            
+        except Exception as e:
+            self.logger.error(f"Failed to analyze context: {str(e)}")
+            return {}
 
 class PersonalizedInteractionModel:
     """
@@ -466,7 +582,7 @@ class NaturalLanguageInterface:
         user_state = self.user_states[user_id]
         
         # Language processing
-        detected_language = language or self.query_processor.detect_language(query)
+        detected_language = language or self.query_processor.detect_language(query)[0]
         
         # Translate query if needed
         if detected_language != 'en':

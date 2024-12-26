@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
-from qiskit import QuantumCircuit, Statevector
+from qiskit import QuantumCircuit
+from qiskit.quantum_info import Statevector
 import networkx as nx
 from typing import Dict, List, Any
 
