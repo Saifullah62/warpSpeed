@@ -60,6 +60,44 @@ Data Layer
 - Data validation
 - Migration handling
 
+Data Management
+--------------
+
+Dataset Location
+~~~~~~~~~~~~~~
+The project's dataset is hosted on Hugging Face and is not included in the GitHub repository. This separation helps:
+
+* Reduce repository size
+* Enable version control of data independently from code
+* Provide easy access through the Hugging Face API
+* Support large file storage and distribution
+
+To work with the dataset:
+
+1. Install the Hugging Face datasets library:
+
+   .. code-block:: bash
+
+      pip install datasets
+
+2. Load the dataset in your code:
+
+   .. code-block:: python
+
+      from datasets import load_dataset
+      dataset = load_dataset("Saifullah/StarTrekTechnology")
+
+3. For local development, download the dataset files from Hugging Face and place them in the ``data/`` directory.
+
+Data Processing
+~~~~~~~~~~~~~
+The data processing pipeline is designed to:
+
+* Load data from local files or Hugging Face
+* Process and clean the data
+* Generate knowledge graphs
+* Export processed data for visualization
+
 Design Principles
 ---------------
 
